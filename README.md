@@ -1,4 +1,4 @@
-#hex-grid
+# hex-grid
 
 apple watch-like grid, built with vanilla JS and HTML
 
