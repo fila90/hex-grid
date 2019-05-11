@@ -171,7 +171,6 @@ function hexGrid(hexes) {
     const axis = (Math.abs(xAxis) + Math.abs(yAxis)) / 2 / 4;
     const scale = axis > 1 ? 0.1 : 1 - axis;
     const hexNode = document.createElement('div');
-    hexNode.innerText = hex.data;
     hexNode.classList.add('hex');
     hexNode.style.cssText = `transform: scale(${scale}) translate3d(${ (xAxis * 100 - 50) / scale}%, ${ (-(yAxis * 100) - 50) / scale}%, 0);`;
     hex.htmlNode = hexNode;
@@ -190,18 +189,6 @@ function hexGrid(hexes) {
       const axis = (Math.abs(xAxis) + Math.abs(yAxis)) / 2 / 4;
       const scale = axis > 1 ? 0.1 : 1 - axis;
       hex.htmlNode.style.cssText = `transform: scale(${scale}) translate3d(${ (xAxis * 100 - 50) / scale}%, ${ (-(yAxis * 100) - 50) / scale}%, 0);`;
-
-      // for better performance
-      requestAnimationFrame(function() {
-        const elem = hex.htmlNode;
-        elem.classList.add('transition');
-        // on transitionEnd remove the classes used control transitions
-        elem.addEventListener('transitionend', function handleTransition() {
-          elem.classList.remove('transition');
-          // remove the eventListener
-          elem.removeEventListener('transitionend', handleTransition);
-        });
-      });
     });
   }
 
@@ -214,12 +201,12 @@ function hexGrid(hexes) {
     // if hovering over hex, do nothing
     if (e.target.classList.contains('hexagon-grid')) {
       _throttleCount++;
-      if (_throttleCount == 25) {
+      if (_throttleCount == 15) {
         setTimeout(() => {
           _calculateDelta(e);
           _moveHexes();
           _throttleCount = 0;
-        }, 10);
+        }, 5);
       }
     }
   }
@@ -230,8 +217,8 @@ function hexGrid(hexes) {
    */
   function _calculateDelta(evt) {
     const divider = window.innerWidth > 640 ? 250 : 100;
-    const offsetX = evt.offsetX;
-    const offsetY = evt.offsetY;
+    const offsetX = evt.offsetX || evt.layerX;
+    const offsetY = evt.offsetY || evt.layerY;
     const x = (offsetX - _helpers.x) / divider;
     const y = (_helpers.y - offsetY) / divider;
     let dX = _helpers.deltaX + x;
@@ -243,8 +230,8 @@ function hexGrid(hexes) {
 
     _helpers.deltaX = dX;
     _helpers.deltaY = dY;
-    _helpers.x = evt.offsetX;
-    _helpers.y = evt.offsetY;
+    _helpers.x = offsetX;
+    _helpers.y = offsetY;
   }
 
   return {
