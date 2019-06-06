@@ -11,6 +11,11 @@ function hexGrid(hexes) {
     x: 0,
     y: 0,
   };
+  const _neighbourCoords = [
+    {x: 1, y: 0, z: -1}, {x: 1, y: -1, z: 0},
+    {x: 0, y: -1, z: 1}, {x: -1, y: 0, z: 1},
+    {x: -1, y: 1, z: 0}, {x: 0, y: 1, z: -1},
+  ];
   let _throttleCount = 0;
   let _grid = [...hexes,];
 
@@ -54,22 +59,7 @@ function hexGrid(hexes) {
   }
 
   /**
-   * @desc attach mouse move to parent element
-   */
-  function initEvents() {
-    htmlHexGrid.addEventListener('mousemove', _handleMousemove);
-  }
-
-  /**
-   * @desc remove mouse move envet
-   */
-  function removeEvents() {
-    htmlHexGrid.removeEventListener('mousemove', _handleMousemove);
-  }
-
-  /**
    * @desc construct blank hexagon matrix
-   * every hex can have up to 6 ne
    * @param {Number} layers number of layers grid will have
    */
   function _constructMatrix(layers) {
@@ -98,41 +88,16 @@ function hexGrid(hexes) {
   /**
    * @desc find neighbour hexagons for each hex in the grid
    * @param {Object} hex
+   * @param {Number} _
+   * @param {Array} grid
    */
-  function _findNeighbors(hex) {
-    const neighbourCoords = [{
-      x: 1,
-      y: 0,
-      z: -1,
-    }, {
-      x: 1,
-      y: -1,
-      z: 0,
-    }, {
-      x: 0,
-      y: -1,
-      z: 1,
-    }, {
-      x: -1,
-      y: 0,
-      z: 1,
-    }, {
-      x: -1,
-      y: 1,
-      z: 0,
-    }, {
-      x: 0,
-      y: 1,
-      z: -1,
-    }, ];
-
-    neighbourCoords.forEach((n, i) => {
-      const neighbourHex = _grid.find(h => hex.matrix.x + n.x === h.matrix.x && hex.matrix.y + n.y === h.matrix.y);
+  function _findNeighbors(hex, _, grid) {
+    _neighbourCoords.forEach((n, i) => {
+      let neighbourHex = grid.find(h => hex.matrix.x + n.x === h.matrix.x && hex.matrix.y + n.y === h.matrix.y);
 
       if (neighbourHex && !neighbourHex.matrix._rendered) {
         neighbourHex.matrix.scale = (Math.abs(neighbourHex.matrix.x) + Math.abs(neighbourHex.matrix.y) + Math.abs(neighbourHex.matrix.z)) / 2;
-        __calculateDelta(hex, neighbourHex, i);
-        // add flags
+        neighbourHex.matrix.coords = _calculateDelta(hex, i);
         neighbourHex.matrix._rendered = true;
       }
     });
@@ -145,7 +110,7 @@ function hexGrid(hexes) {
    * @param {Object} neighbourHex neighbour hexagon object that's being populated
    * @param {Number} i index of neighbour, used to calculate offset angle between central hex and neighbour
    */
-  function __calculateDelta(hex, neighbourHex, i) {
+  function _calculateDelta(hex, i) {
     const angleDeg = 60 * i - 30;
     const angleRad = (Math.PI / 180) * angleDeg;
     const cX = hex.matrix.coords ? hex.matrix.coords.x : 0;
@@ -154,11 +119,8 @@ function hexGrid(hexes) {
     const y = cY + Math.sin(angleRad);
     if (x > _helpers.offsetX) _helpers.offsetX = x;
     if (y > _helpers.offsetY) _helpers.offsetY = y;
-    neighbourHex.matrix.coords = {
-      x,
-      y,
-    };
-    return neighbourHex;
+
+    return {x, y};
   }
 
   /**
@@ -183,7 +145,7 @@ function hexGrid(hexes) {
    * @desc update styles on hexes
    */
   function _moveHexes() {
-    _grid.forEach((hex, i) => {
+    _grid.forEach(hex => {
       const xAxis = hex.matrix.coords.x + _helpers.deltaX;
       const yAxis = hex.matrix.coords.y + _helpers.deltaY;
       const axis = (Math.abs(xAxis) + Math.abs(yAxis)) / 2 / 4;
@@ -201,21 +163,35 @@ function hexGrid(hexes) {
     // if hovering over hex, do nothing
     if (e.target.classList.contains('hexagon-grid')) {
       _throttleCount++;
-      if (_throttleCount == 15) {
+      if (_throttleCount == 10) {
         setTimeout(() => {
-          _calculateDelta(e);
+          _calculateMove(e);
           _moveHexes();
           _throttleCount = 0;
-        }, 5);
+        }, 25);
       }
     }
+  }
+
+  /**
+   * @desc attach mouse move to parent element
+   */
+  function initEvents() {
+    htmlHexGrid.addEventListener('mousemove', _handleMousemove);
+  }
+
+  /**
+   * @desc remove mouse move envet
+   */
+  function removeEvents() {
+    htmlHexGrid.removeEventListener('mousemove', _handleMousemove);
   }
 
   /**
    * @desc calculate difference from last move
    * @param {Object} evt
    */
-  function _calculateDelta(evt) {
+  function _calculateMove(evt) {
     const divider = window.innerWidth > 640 ? 250 : 100;
     const offsetX = evt.offsetX || evt.layerX;
     const offsetY = evt.offsetY || evt.layerY;

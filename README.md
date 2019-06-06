@@ -1,6 +1,8 @@
 # hex-grid
 
-apple watch-like grid, built with vanilla JS and HTML
+apple watch-like grid, built with vanilla JS
+
+![preview](hex.gif)
 
 ### how to
 
